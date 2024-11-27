@@ -274,12 +274,12 @@ func (d *Dumper) HandleAddNode(log types.Log) error {
 }
 
 type CreateOrderEvent struct {
-	Address    common.Address
-	Id         uint64
-	Nid        uint64
-	ActiveTime *big.Int
-	Probation  *big.Int
-	Duration   *big.Int
+	Address common.Address
+	Id      uint64
+	Nid     uint64
+	Act     *big.Int
+	Pro     *big.Int
+	Dur     *big.Int
 }
 
 func (d *Dumper) HandleCreateOrder(log types.Log) error {
@@ -289,17 +289,17 @@ func (d *Dumper) HandleCreateOrder(log types.Log) error {
 		return err
 	}
 
-	startTime := out.ActiveTime.Add(out.ActiveTime, out.Probation)
-	endTime := startTime.Add(startTime, out.Duration)
+	startTime := out.Act.Add(out.Act, out.Pro)
+	endTime := startTime.Add(startTime, out.Dur)
 	orderInfo := database.Order{
 		Provider:     out.Address.Hex(),
 		Id:           uint64(out.Id),
 		Nid:          out.Nid,
-		ActivateTime: time.Unix(out.ActiveTime.Int64(), 0),
+		ActivateTime: time.Unix(out.Act.Int64(), 0),
 		StartTime:    time.Unix(startTime.Int64(), 0),
 		EndTime:      time.Unix(endTime.Int64(), 0),
-		Probation:    out.Probation.Int64(),
-		Duration:     out.Duration.Int64(),
+		Probation:    out.Pro.Int64(),
+		Duration:     out.Dur.Int64(),
 	}
 
 	err = orderInfo.CreateOrder()
