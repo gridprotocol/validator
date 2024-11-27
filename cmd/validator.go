@@ -42,7 +42,7 @@ var runCmd = &cli.Command{
 		&cli.StringFlag{
 			Name:  "sk",
 			Usage: "input your private key",
-			Value: "",
+			Value: "5087077ba322c5bd02f95ed8b50ff9251b8f1d165455d0688c75f5d4740a19f4", // test validator sk
 		},
 		&cli.StringFlag{
 			Name:  "chain",
