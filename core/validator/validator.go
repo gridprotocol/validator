@@ -66,6 +66,7 @@ func (v *GRIDValidator) Start(ctx context.Context) {
 		case <-time.After(wait):
 		}
 
+		// generate a random value
 		err := v.GenerateRND(ctx)
 		if err != nil {
 			logger.Error(err.Error())
@@ -83,12 +84,14 @@ func (v *GRIDValidator) Start(ctx context.Context) {
 		case <-time.After(wait):
 		}
 
+		// get nodes with order
 		resultMap, err := v.GetChallengeNode(ctx)
 		if err != nil {
 			logger.Error(err.Error())
 			continue
 		}
 
+		// handle validator proof result
 		res, err := v.HandleResult(ctx, resultMap)
 		if err != nil {
 			logger.Error(err.Error())
@@ -126,6 +129,7 @@ func (v *GRIDValidator) IsProveTime() bool {
 	return false
 }
 
+// wait time
 func (v *GRIDValidator) CalculateWatingToPrepare() (time.Duration, int64) {
 	challengeCycleSeconds := int64((v.prepareInterval + v.proveInterval + v.waitInterval).Seconds())
 	now := time.Now().Unix()
@@ -142,6 +146,7 @@ func (v *GRIDValidator) CalculateWatingToPrepare() (time.Duration, int64) {
 	return time.Duration(waitingSeconds) * time.Second, next
 }
 
+// wait time
 func (v *GRIDValidator) CalculateWatingToProve() (time.Duration, int64) {
 	challengeCycleSeconds := int64((v.prepareInterval + v.proveInterval + v.waitInterval).Seconds())
 	now := time.Now().Unix()
@@ -161,6 +166,7 @@ func (v *GRIDValidator) CalculateWatingToProve() (time.Duration, int64) {
 	return time.Duration(waitingSeconds) * time.Second, next
 }
 
+// random value
 func (v *GRIDValidator) GenerateRND(ctx context.Context) error {
 	// TODO: call the contract
 	for index := range RND {
@@ -170,6 +176,7 @@ func (v *GRIDValidator) GenerateRND(ctx context.Context) error {
 	return nil
 }
 
+// get all nodes with order
 func (v *GRIDValidator) GetChallengeNode(ctx context.Context) (map[types.NodeID]bool, error) {
 	orders, err := database.ListAllActivedOrder()
 	if err != nil {
@@ -210,6 +217,7 @@ func (v *GRIDValidator) HandleResult(ctx context.Context, resultMap map[types.No
 		case <-channel:
 			logger.Info("end handle result")
 			return resultMap, nil
+		// receive succeeded proof result
 		case result := <-resultChan:
 			if _, ok := resultMap[result.NodeID]; ok {
 				resultMap[result.NodeID] = true
@@ -261,15 +269,20 @@ func (v *GRIDValidator) AddPenalty(ctx context.Context, res map[types.NodeID]boo
 	return nil
 }
 
+// generate signature
 func (v *GRIDValidator) GenerateWithdrawSignature(address string, amount *big.Int) ([]byte, error) {
 	profit, err := database.GetProfitByAddress(address)
 	if err != nil {
 		return nil, err
 	}
 
+	// get nonce
 	var nonceBuf = make([]byte, 8)
 	binary.BigEndian.PutUint64(nonceBuf, profit.Nonce)
 
+	// get hash
 	hash := crypto.Keccak256(common.FromHex(address), amount.Bytes(), nonceBuf)
+
+	// sign
 	return crypto.Sign(hash, v.sk)
 }

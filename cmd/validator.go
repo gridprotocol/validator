@@ -17,18 +17,19 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-var provider1 = "0x867F691B053B61490F8eB74c2df63745CfC0A973"
+//var provider1 = "0x867F691B053B61490F8eB74c2df63745CfC0A973"
 
 var ValidatorCmd = &cli.Command{
 	Name:  "validator",
 	Usage: "grid validator node",
 	Subcommands: []*cli.Command{
 		// validatorNodeRunCmd,
-		validatorNodeTestCmd,
+		runCmd,
 	},
 }
 
-var validatorNodeTestCmd = &cli.Command{
+// run validator with sk
+var runCmd = &cli.Command{
 	Name:  "run",
 	Usage: "run meeda store node",
 	Flags: []cli.Flag{
@@ -67,30 +68,35 @@ var validatorNodeTestCmd = &cli.Command{
 			return err
 		}
 
-		registryAddress := common.HexToAddress("0x0975F806ef48E94f46FAADdDA6ED86da7C522330")
-		marketAddress := common.HexToAddress("0x2f196ba4929e1E4aE2623130A1045f877bD1Afca")
+		registryAddress := common.HexToAddress("0x0EDbc74128eACB6cDaB5C80834BBE2E9e749cCAD")
+		marketAddress := common.HexToAddress("0xfC865296074c896cAFf8d1e67C40bd44FeDe36f2")
 		dumper, err := core.NewGRIDDumper(chain, registryAddress, marketAddress)
 		if err != nil {
 			return err
 		}
 
+		// generate db
 		err = dumper.DumpGRID()
 		if err != nil {
 			return err
 		}
+		// sync db with chain
 		go dumper.SubscribeGRID(context.TODO())
 
+		// new validator
 		validator, err := validator.NewGRIDValidator(chain, privateKey)
 		if err != nil {
 			return err
 		}
 		go validator.Start(context.TODO())
 
+		// new validator server
 		server, err := NewValidatorServer(validator, endPoint)
 		if err != nil {
 			return err
 		}
 
+		// start server listen
 		go func() {
 			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 				log.Fatalf("listen: %s\n", err)

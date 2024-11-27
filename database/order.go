@@ -32,6 +32,17 @@ func GetOrderByAddressAndId(address string, id int64) (Order, error) {
 	return order, nil
 }
 
+// get orders count by provider address
+func GetOrderCount(address string) (int64, error) {
+	var cnt int64
+	err := GlobalDataBase.Model(&Order{}).Where("address = ?", address).Count(&cnt).Error
+	if err != nil {
+		return -1, err
+	}
+
+	return cnt, nil
+}
+
 func ListAllActivedOrder() ([]Order, error) {
 	var now = time.Now()
 	var orders []Order

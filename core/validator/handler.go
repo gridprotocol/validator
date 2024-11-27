@@ -62,6 +62,7 @@ func (v *GRIDValidator) SubmitProofHandler(c *gin.Context) {
 		return
 	}
 
+	// send succeeded proof to chan
 	resultChan <- types.Result{
 		NodeID:  proof.NodeID,
 		Success: true,
