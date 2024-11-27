@@ -134,11 +134,27 @@ func (d *Dumper) DumpGRID() error {
 			logger.Info("Handle Add Node Event")
 			err = d.HandleAddNode(event)
 		case "CreateOrder":
-			logger.Info("Handle Create Order Event")
-			err = d.HandleCreateOrder(event)
-		case "Withdraw":
-			logger.Info("Handle Withdraw Event")
-			err = d.HandleCreateOrder(event)
+			logger.Info("==== Handle Create Order Event")
+			tx, _, err := client.TransactionByHash(context.TODO(), event.TxHash)
+			if err != nil {
+				logger.Debug("handle create order error: ", err.Error())
+			}
+
+			// get user address
+			user, err := types.LatestSignerForChainID(tx.ChainId()).Sender(tx)
+			if err != nil {
+				logger.Debug(err.Error())
+				return err
+			}
+
+			// store order info
+			err = d.HandleCreateOrder(event, user)
+			if err != nil {
+				logger.Debug(err.Error())
+			}
+		// case "Withdraw":
+		// 	logger.Info("Handle Withdraw Event")
+		// 	err = d.HandleCreateOrder(event)
 		default:
 			continue
 		}
@@ -306,16 +322,18 @@ func (d *Dumper) HandleAddNode(log types.Log) error {
 }
 
 type CreateOrderEvent struct {
-	Address common.Address
-	Id      uint64
-	Nid     uint64
-	Act     *big.Int
-	Pro     *big.Int
-	Dur     *big.Int
+	Cp  common.Address
+	Id  uint64
+	Nid uint64
+	Act *big.Int
+	Pro *big.Int
+	Dur *big.Int
 }
 
-func (d *Dumper) HandleCreateOrder(log types.Log) error {
+func (d *Dumper) HandleCreateOrder(log types.Log, from common.Address) error {
 	var out CreateOrderEvent
+
+	// abi1 = market
 	err := d.unpack(log, d.contractABI[1], &out)
 	if err != nil {
 		return err
@@ -324,8 +342,9 @@ func (d *Dumper) HandleCreateOrder(log types.Log) error {
 	startTime := out.Act.Add(out.Act, out.Pro)
 	endTime := startTime.Add(startTime, out.Dur)
 	orderInfo := database.Order{
-		Provider:     out.Address.Hex(),
-		Id:           uint64(out.Id),
+		User:         from.Hex(),
+		Provider:     out.Cp.Hex(),
+		Id:           out.Id,
 		Nid:          out.Nid,
 		ActivateTime: time.Unix(out.Act.Int64(), 0),
 		StartTime:    time.Unix(startTime.Int64(), 0),
@@ -334,34 +353,14 @@ func (d *Dumper) HandleCreateOrder(log types.Log) error {
 		Duration:     out.Dur.Int64(),
 	}
 
+	logger.Info("store create order..")
 	err = orderInfo.CreateOrder()
 	if err != nil {
+		logger.Debug("store create order error: ", err.Error())
 		return err
 	}
 
-	// get node by cp and nid
-	nodeInfo, err := database.GetNodeByAddressAndId(orderInfo.Provider, orderInfo.Nid)
-	if err != nil {
-		return err
-	}
-
-	profitInfo, err := database.GetProfitByAddress(orderInfo.Provider)
-	if err != nil {
-		return err
-	}
-
-	// (cpuPrice + gpuPrice + memPrice + diskPrice) * duration
-	price := new(big.Int).Add(nodeInfo.CPUPrice, nodeInfo.GPUPrice)
-	price.Add(price, nodeInfo.MemPrice)
-	price.Add(price, nodeInfo.DiskPrice)
-	price.Mul(price, big.NewInt(orderInfo.Duration))
-
-	profitInfo.Profit.Add(profitInfo.Profit, price)
-	if orderInfo.EndTime.Compare(profitInfo.EndTime) == 1 {
-		profitInfo.EndTime = orderInfo.EndTime
-	}
-
-	return profitInfo.UpdateProfit()
+	return nil
 }
 
 type WithdrawEvent struct {

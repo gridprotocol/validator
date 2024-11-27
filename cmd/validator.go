@@ -68,8 +68,10 @@ var runCmd = &cli.Command{
 			return err
 		}
 
+		// contract address
 		registryAddress := common.HexToAddress("0x10fd5Eb0A59398796aA6C368CF0562135C3e4c32")
 		marketAddress := common.HexToAddress("0xd43241c35E49158B61aD5c061b2d050D276f9E94")
+
 		dumper, err := core.NewGRIDDumper(chain, registryAddress, marketAddress)
 		if err != nil {
 			return err
