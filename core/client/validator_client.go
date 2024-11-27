@@ -5,9 +5,10 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
-	"grid-prover/core/types"
 	"io"
 	"net/http"
+
+	"github.com/gridprotocol/validator/core/types"
 
 	"golang.org/x/xerrors"
 )

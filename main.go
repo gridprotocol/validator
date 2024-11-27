@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"grid-prover/cmd"
 	"os"
+
+	"github.com/gridprotocol/validator/cmd"
 
 	"github.com/urfave/cli/v2"
 )

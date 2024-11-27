@@ -4,13 +4,13 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"encoding/binary"
-	"grid-prover/database"
-	"grid-prover/logs"
 	"math/big"
 	"math/rand"
 	"time"
 
-	"grid-prover/core/types"
+	"github.com/gridprotocol/dumper/database"
+	"github.com/gridprotocol/validator/core/types"
+	"github.com/gridprotocol/validator/logs"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"

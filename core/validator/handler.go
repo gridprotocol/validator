@@ -4,10 +4,12 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"grid-prover/core/types"
-	"grid-prover/database"
 	"math/big"
 	"net/http"
+
+	"github.com/gridprotocol/validator/core/types"
+
+	"github.com/gridprotocol/dumper/database"
 
 	"github.com/gin-gonic/gin"
 )
