@@ -276,6 +276,7 @@ func (d *Dumper) HandleAddNode(log types.Log) error {
 type CreateOrderEvent struct {
 	Address    common.Address
 	Id         uint64
+	Nid        uint64
 	ActiveTime *big.Int
 	Probation  *big.Int
 	Duration   *big.Int
@@ -293,6 +294,7 @@ func (d *Dumper) HandleCreateOrder(log types.Log) error {
 	orderInfo := database.Order{
 		Provider:     out.Address.Hex(),
 		Id:           uint64(out.Id),
+		Nid:          out.Nid,
 		ActivateTime: time.Unix(out.ActiveTime.Int64(), 0),
 		StartTime:    time.Unix(startTime.Int64(), 0),
 		EndTime:      time.Unix(endTime.Int64(), 0),
