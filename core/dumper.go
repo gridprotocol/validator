@@ -160,22 +160,54 @@ func (d *Dumper) DumpGRID() error {
 	return nil
 }
 
+// func (d *Dumper) unpack(log types.Log, ABI abi.ABI, out interface{}) error {
+// 	eventName := d.eventNameMap[log.Topics[0]]
+// 	indexed := d.indexedMap[log.Topics[0]]
+
+// 	logger.Info(log.Topics)
+
+// 	logger.Info(eventName)
+// 	logger.Info(indexed)
+
+// 	err := ABI.UnpackIntoInterface(out, eventName, log.Data)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	logger.Info(out)
+
+// 	return abi.ParseTopics(out, indexed, log.Topics[1:])
+// }
+
+// unpack a log
 func (d *Dumper) unpack(log types.Log, ABI abi.ABI, out interface{}) error {
+	// get event name from map with hash
 	eventName := d.eventNameMap[log.Topics[0]]
+	// get all topics
 	indexed := d.indexedMap[log.Topics[0]]
 
-	logger.Info(log.Topics)
+	logger.Infof("log data: %x", log.Data)
+	logger.Info("log topics: ", log.Topics)
 
-	logger.Info(eventName)
-	logger.Info(indexed)
+	// logger.Info("event name: ", eventName)
+	logger.Info("topics in map: ", indexed)
 
+	// parse data
+	logger.Info("parse data, event name: ", eventName)
 	err := ABI.UnpackIntoInterface(out, eventName, log.Data)
 	if err != nil {
 		return err
 	}
-	logger.Info(out)
+	logger.Info("unpack out(no topics):", out)
 
-	return abi.ParseTopics(out, indexed, log.Topics[1:])
+	// parse topic
+	logger.Info("parse topic")
+	err = abi.ParseTopics(out, indexed, log.Topics[1:])
+	if err != nil {
+		return err
+	}
+	logger.Info("unpack out(with topics):", out)
+
+	return nil
 }
 
 type RegisterEvent struct {
