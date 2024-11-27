@@ -52,9 +52,10 @@ func (n *Node) CreateNode() error {
 	return GlobalDataBase.Create(&nodeStore).Error
 }
 
-func GetNodeByAddressAndId(address string, id int) (Node, error) {
+// get by cp and nid
+func GetNodeByAddressAndId(address string, nid uint64) (Node, error) {
 	var nodeStore NodeStore
-	err := GlobalDataBase.Model(&NodeStore{}).Where("address = ? AND id = ?", address, id).First(&nodeStore).Error
+	err := GlobalDataBase.Model(&NodeStore{}).Where("address = ? AND id = ?", address, nid).First(&nodeStore).Error
 	if err != nil {
 		return Node{}, err
 	}

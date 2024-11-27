@@ -8,7 +8,7 @@ import (
 
 type NodeID struct {
 	Address string `json:"address"`
-	ID      int    `json:"id"`
+	ID      uint64 `json:"id"`
 }
 
 func (n *NodeID) ToBytes() []byte {

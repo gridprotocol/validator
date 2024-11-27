@@ -186,7 +186,7 @@ func (v *GRIDValidator) GetChallengeNode(ctx context.Context) (map[types.NodeID]
 	var resultMap = make(map[types.NodeID]bool)
 	for _, order := range orders {
 		resultMap[types.NodeID{
-			Address: order.Address,
+			Address: order.Provider,
 			ID:      order.Id,
 		}] = false
 	}

@@ -291,8 +291,8 @@ func (d *Dumper) HandleCreateOrder(log types.Log) error {
 	startTime := out.ActiveTime.Add(out.ActiveTime, out.Probation)
 	endTime := startTime.Add(startTime, out.Duration)
 	orderInfo := database.Order{
-		Address:      out.Address.Hex(),
-		Id:           int(out.Id),
+		Provider:     out.Address.Hex(),
+		Id:           uint64(out.Id),
 		ActivateTime: time.Unix(out.ActiveTime.Int64(), 0),
 		StartTime:    time.Unix(startTime.Int64(), 0),
 		EndTime:      time.Unix(endTime.Int64(), 0),
@@ -305,12 +305,13 @@ func (d *Dumper) HandleCreateOrder(log types.Log) error {
 		return err
 	}
 
-	nodeInfo, err := database.GetNodeByAddressAndId(orderInfo.Address, orderInfo.Id)
+	// get node by cp and nid
+	nodeInfo, err := database.GetNodeByAddressAndId(orderInfo.Provider, orderInfo.Nid)
 	if err != nil {
 		return err
 	}
 
-	profitInfo, err := database.GetProfitByAddress(orderInfo.Address)
+	profitInfo, err := database.GetProfitByAddress(orderInfo.Provider)
 	if err != nil {
 		return err
 	}

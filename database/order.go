@@ -3,8 +3,10 @@ package database
 import "time"
 
 type Order struct {
-	Address      string
-	Id           int
+	Id           uint64 // order id
+	User         string
+	Provider     string
+	Nid          uint64    // node id
 	ActivateTime time.Time `gorm:"column:activate"`
 	StartTime    time.Time `gorm:"column:start"`
 	EndTime      time.Time `gorm:"column:end"`
