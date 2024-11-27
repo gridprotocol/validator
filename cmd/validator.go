@@ -68,8 +68,8 @@ var runCmd = &cli.Command{
 			return err
 		}
 
-		registryAddress := common.HexToAddress("0x0EDbc74128eACB6cDaB5C80834BBE2E9e749cCAD")
-		marketAddress := common.HexToAddress("0xfC865296074c896cAFf8d1e67C40bd44FeDe36f2")
+		registryAddress := common.HexToAddress("0x10fd5Eb0A59398796aA6C368CF0562135C3e4c32")
+		marketAddress := common.HexToAddress("0xd43241c35E49158B61aD5c061b2d050D276f9E94")
 		dumper, err := core.NewGRIDDumper(chain, registryAddress, marketAddress)
 		if err != nil {
 			return err
