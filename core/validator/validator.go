@@ -84,14 +84,14 @@ func (v *GRIDValidator) Start(ctx context.Context) {
 		case <-time.After(wait):
 		}
 
-		// get nodes with order
+		// get nodes list
 		resultMap, err := v.GetChallengeNode(ctx)
 		if err != nil {
 			logger.Error(err.Error())
 			continue
 		}
 
-		// handle validator proof result
+		// receive proof from chan and set resultMap
 		res, err := v.HandleResult(ctx, resultMap)
 		if err != nil {
 			logger.Error(err.Error())
@@ -99,6 +99,8 @@ func (v *GRIDValidator) Start(ctx context.Context) {
 		}
 
 		logger.Info("Start update profits")
+
+		// add penalty for each failed proof
 		err = v.AddPenalty(ctx, res)
 		if err != nil {
 			logger.Error(err.Error())
@@ -107,6 +109,93 @@ func (v *GRIDValidator) Start(ctx context.Context) {
 
 		v.last = nextTime
 	}
+}
+
+// receive proof from chan and set resultMap
+func (v *GRIDValidator) HandleResult(ctx context.Context, resultMap map[types.NodeID]bool) (map[types.NodeID]bool, error) {
+	var channel = make(chan struct{})
+
+	logger.Info("start handle result")
+
+	// send quit signal
+	go func() {
+		select {
+		case <-ctx.Done():
+			channel <- struct{}{}
+			return
+		case <-v.done:
+			channel <- struct{}{}
+			return
+		case <-time.After(v.proveInterval):
+			channel <- struct{}{}
+			return
+		}
+	}()
+
+	for {
+		select {
+		// quit
+		case <-channel:
+			logger.Info("end handle result")
+			return resultMap, nil
+
+		// receive succeeded proof result
+		case result := <-resultChan:
+			if _, ok := resultMap[result.NodeID]; ok {
+				resultMap[result.NodeID] = true
+			}
+		}
+	}
+
+}
+
+// add penalty for each failed proof, update profit info in db
+func (v *GRIDValidator) AddPenalty(ctx context.Context, res map[types.NodeID]bool) error {
+	for nodeID, result := range res {
+
+		// get profit from db
+		profitInfo, err := database.GetProfitByAddress(nodeID.Provider)
+		if err != nil {
+			return err
+		}
+
+		// calc reward
+		var reward = new(big.Int)
+		if v.last <= profitInfo.LastTime.Unix() {
+			reward.SetInt64(0)
+		} else if v.last >= profitInfo.EndTime.Unix() {
+			reward.Set(profitInfo.Profit)
+		} else if profitInfo.LastTime.Unix() >= profitInfo.EndTime.Unix() {
+			reward.SetInt64(0)
+		} else {
+			reward.Mul(profitInfo.Profit, big.NewInt((v.last-profitInfo.LastTime.Unix())/(profitInfo.EndTime.Unix()-profitInfo.LastTime.Unix())))
+		}
+
+		// remain := profitInfo.Profit - reward
+		remain := new(big.Int).Sub(profitInfo.Profit, reward)
+
+		// calc penalty if proof failed, 1% of remain per failure proof
+		var penalty = big.NewInt(0)
+		if !result {
+			// penalty = remain / 100
+			penalty.Div(remain, big.NewInt(100))
+		}
+
+		profitInfo.LastTime = time.Unix(v.last, 0)
+		profitInfo.Balance.Add(profitInfo.Balance, reward)
+		profitInfo.Profit.Sub(remain, penalty)
+		profitInfo.Penalty.Add(profitInfo.Penalty, penalty)
+
+		logger.Debugf("Balance: %d, Profit: %d, penalty: %d", profitInfo.Balance, profitInfo.Profit, profitInfo.Penalty)
+
+		// update profit into db
+		err = profitInfo.UpdateProfit()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (v *GRIDValidator) Stop() {
@@ -183,90 +272,18 @@ func (v *GRIDValidator) GetChallengeNode(ctx context.Context) (map[types.NodeID]
 		return nil, err
 	}
 
-	var resultMap = make(map[types.NodeID]bool)
+	// record proof result
+	resultMap := make(map[types.NodeID]bool)
+
+	// init
 	for _, order := range orders {
 		resultMap[types.NodeID{
-			Address: order.Provider,
-			ID:      order.Id,
+			Provider: order.Provider,
+			ID:       order.Id,
 		}] = false
 	}
 
 	return resultMap, nil
-}
-
-func (v *GRIDValidator) HandleResult(ctx context.Context, resultMap map[types.NodeID]bool) (map[types.NodeID]bool, error) {
-	var channel = make(chan struct{})
-
-	logger.Info("start handle result")
-	go func() {
-		select {
-		case <-ctx.Done():
-			channel <- struct{}{}
-			return
-		case <-v.done:
-			channel <- struct{}{}
-			return
-		case <-time.After(v.proveInterval):
-			channel <- struct{}{}
-			return
-		}
-	}()
-
-	for {
-		select {
-		case <-channel:
-			logger.Info("end handle result")
-			return resultMap, nil
-		// receive succeeded proof result
-		case result := <-resultChan:
-			if _, ok := resultMap[result.NodeID]; ok {
-				resultMap[result.NodeID] = true
-			}
-		}
-	}
-
-	// return resultMap, nil
-}
-
-func (v *GRIDValidator) AddPenalty(ctx context.Context, res map[types.NodeID]bool) error {
-	for nodeID, result := range res {
-
-		profitInfo, err := database.GetProfitByAddress(nodeID.Address)
-		if err != nil {
-			return err
-		}
-
-		var reward = new(big.Int)
-		if v.last <= profitInfo.LastTime.Unix() {
-			reward.SetInt64(0)
-		} else if v.last >= profitInfo.EndTime.Unix() {
-			reward.Set(profitInfo.Profit)
-		} else if profitInfo.LastTime.Unix() >= profitInfo.EndTime.Unix() {
-			reward.SetInt64(0)
-		} else {
-			reward.Mul(profitInfo.Profit, big.NewInt((v.last-profitInfo.LastTime.Unix())/(profitInfo.EndTime.Unix()-profitInfo.LastTime.Unix())))
-		}
-		// remain := profitInfo.Profit - reward
-		remain := new(big.Int).Sub(profitInfo.Profit, reward)
-		var penalty = big.NewInt(0)
-		if !result {
-			// penalty = remain / 100
-			penalty.Div(remain, big.NewInt(100))
-		}
-
-		profitInfo.LastTime = time.Unix(v.last, 0)
-		profitInfo.Balance.Add(profitInfo.Balance, reward)
-		profitInfo.Profit.Sub(remain, penalty)
-		profitInfo.Penalty.Add(profitInfo.Penalty, penalty)
-		logger.Debugf("Balance: %d, Profit: %d, penalty: %d", profitInfo.Balance, profitInfo.Profit, profitInfo.Penalty)
-
-		err = profitInfo.UpdateProfit()
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 // generate signature

@@ -64,11 +64,13 @@ func (c *GRIDClient) GetRND(ctx context.Context) ([32]byte, error) {
 	return rnd, nil
 }
 
+// send proof with http request
 func (c *GRIDClient) SubmitProof(ctx context.Context, proof types.Proof) error {
 	var url = c.baseUrl + "/proof"
+
 	payload := make(map[string]interface{})
 
-	payload["address"] = proof.Address
+	payload["provider"] = proof.Provider
 	payload["id"] = proof.ID
 	payload["nonce"] = proof.Nonce
 	b, err := json.Marshal(payload)
@@ -76,11 +78,13 @@ func (c *GRIDClient) SubmitProof(ctx context.Context, proof types.Proof) error {
 		return err
 	}
 
+	// new post request
 	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(b))
 	if err != nil {
 		return err
 	}
 
+	// send request
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err

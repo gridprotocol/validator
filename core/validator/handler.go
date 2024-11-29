@@ -9,15 +9,15 @@ import (
 
 	"github.com/gridprotocol/validator/core/types"
 
-	"github.com/gridprotocol/dumper/database"
-
 	"github.com/gin-gonic/gin"
 )
 
-func (v *GRIDValidator) LoadValidatorModule(g *gin.RouterGroup) {
-	g.GET("/rnd", v.GetRNDHandler)
-	g.GET("/withdraw/signature", v.GetWithdrawSignatureHandler)
-	g.POST("/proof", v.SubmitProofHandler)
+// register all route
+func (v *GRIDValidator) LoadValidatorModule(rg *gin.RouterGroup) {
+	rg.GET("/rnd", v.GetRNDHandler)
+	rg.GET("/withdraw/signature", v.GetWithdrawSignatureHandler)
+	rg.POST("/proof", v.SubmitProofHandler)
+
 	fmt.Println("load light node moudle success!")
 }
 
@@ -31,6 +31,7 @@ func (v *GRIDValidator) GetRNDHandler(c *gin.Context) {
 
 // }
 
+// proof handler
 func (v *GRIDValidator) SubmitProofHandler(c *gin.Context) {
 	var proof types.Proof
 	err := c.BindJSON(&proof)
@@ -40,17 +41,20 @@ func (v *GRIDValidator) SubmitProofHandler(c *gin.Context) {
 		return
 	}
 
+	// check proof time
 	if !v.IsProveTime() {
 		logger.Error("Failure to submit proof within the proof time")
 		c.AbortWithStatusJSON(400, "Failure to submit proof within the proof time")
 		return
 	}
 
+	// make result with proof and rnd
 	hash := sha256.New()
 	hash.Write(RND[:])
 	hash.Write(proof.ToBytes())
 	result := hash.Sum(nil)
 
+	// get difficult
 	diffcult, err := getDiffcultByProviderId(proof.NodeID)
 	if err != nil {
 		logger.Error(err)
@@ -58,6 +62,7 @@ func (v *GRIDValidator) SubmitProofHandler(c *gin.Context) {
 		return
 	}
 
+	// check pow with result and dificult
 	if !checkPOWResult(result, diffcult) {
 		logger.Error("Verify Proof Failed:", hex.EncodeToString(result))
 		c.AbortWithStatusJSON(400, "Verify Proof Failed")
@@ -73,23 +78,23 @@ func (v *GRIDValidator) SubmitProofHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, "Verify Proof Success")
 }
 
-func (v *GRIDValidator) GetProfitInfo(c *gin.Context) {
-	address := c.Query("address")
-	if len(address) == 0 {
-		logger.Error("field address or amount is not set")
-		c.AbortWithStatusJSON(400, "field address is not set")
-		return
-	}
+// func (v *GRIDValidator) GetProfitInfo(c *gin.Context) {
+// 	address := c.Query("address")
+// 	if len(address) == 0 {
+// 		logger.Error("field address or amount is not set")
+// 		c.AbortWithStatusJSON(400, "field address is not set")
+// 		return
+// 	}
 
-	profit, err := database.GetProfitByAddress("address")
-	if err != nil {
-		logger.Error(err.Error())
-		c.AbortWithStatusJSON(400, err.Error())
-		return
-	}
+// 	profit, err := database.GetProfitByAddress("address")
+// 	if err != nil {
+// 		logger.Error(err.Error())
+// 		c.AbortWithStatusJSON(400, err.Error())
+// 		return
+// 	}
 
-	c.JSON(200, profit)
-}
+// 	c.JSON(200, profit)
+// }
 
 func (v *GRIDValidator) GetWithdrawSignatureHandler(c *gin.Context) {
 	address := c.Query("address")
@@ -119,6 +124,9 @@ func (v *GRIDValidator) GetWithdrawSignatureHandler(c *gin.Context) {
 }
 
 func getDiffcultByProviderId(nodeID types.NodeID) (int, error) {
+	// idle
+	_ = nodeID
+
 	return 8, nil
 }
 
@@ -136,9 +144,5 @@ func checkPOWResult(hash []byte, diffcult int) bool {
 		}
 	}
 
-	if hash[n]&remain != 0 {
-		return false
-	}
-
-	return true
+	return hash[n]&remain == 0
 }

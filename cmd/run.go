@@ -92,6 +92,7 @@ var runCmd = &cli.Command{
 		if err != nil {
 			return err
 		}
+		// validate all nodes every 2 hours
 		go validator.Start(context.TODO())
 
 		// new validator server
@@ -123,6 +124,7 @@ var runCmd = &cli.Command{
 	},
 }
 
+// new gin server, register route
 func NewValidatorServer(validator *validator.GRIDValidator, endpoint string) (*http.Server, error) {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
@@ -131,6 +133,8 @@ func NewValidatorServer(validator *validator.GRIDValidator, endpoint string) (*h
 	router.GET("/", func(c *gin.Context) {
 		c.String(http.StatusOK, "Welcome GRID Validator Node")
 	})
+
+	// register all route
 	validator.LoadValidatorModule(router.Group("/v1"))
 
 	return &http.Server{

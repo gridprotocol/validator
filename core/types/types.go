@@ -7,15 +7,15 @@ import (
 )
 
 type NodeID struct {
-	Address string `json:"address"`
-	ID      uint64 `json:"id"`
+	Provider string `json:"provider"`
+	ID       uint64 `json:"id"`
 }
 
 func (n *NodeID) ToBytes() []byte {
 	var buf = make([]byte, 8)
 	binary.LittleEndian.PutUint64(buf, uint64(n.ID))
 
-	return append(common.Hex2Bytes(n.Address), buf...)
+	return append(common.Hex2Bytes(n.Provider), buf...)
 }
 
 type Proof struct {
