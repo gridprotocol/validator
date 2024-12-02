@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"net/http"
 
+	"github.com/gridprotocol/dumper/database"
 	"github.com/gridprotocol/validator/core/types"
 
 	"github.com/gin-gonic/gin"
@@ -18,6 +19,9 @@ func (v *GRIDValidator) LoadValidatorModule(rg *gin.RouterGroup) {
 	rg.GET("/withdraw/signature", v.GetWithdrawSignatureHandler)
 	rg.POST("/proof", v.SubmitProofHandler)
 
+	// get order count of a provider
+	rg.GET("/v1/provider/:address/count", v.GetOrderCountHandler())
+
 	fmt.Println("load light node moudle success!")
 }
 
@@ -27,9 +31,21 @@ func (v *GRIDValidator) GetRNDHandler(c *gin.Context) {
 	})
 }
 
-// func GetSettingInfo(c *gin.Context) {
+// get order count of a provider
+func (v *GRIDValidator) GetOrderCountHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// provider address
+		address := c.Param("address")
+		cnt, err := database.GetOrderCount(address)
+		if err != nil {
+			logger.Error(err.Error())
+			c.AbortWithStatusJSON(500, err.Error())
+			return
+		}
 
-// }
+		c.JSON(200, cnt)
+	}
+}
 
 // proof handler
 func (v *GRIDValidator) SubmitProofHandler(c *gin.Context) {
