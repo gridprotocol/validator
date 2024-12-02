@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -73,6 +74,9 @@ var runCmd = &cli.Command{
 		// contract address
 		registryAddress := common.HexToAddress("0x10fd5Eb0A59398796aA6C368CF0562135C3e4c32")
 		marketAddress := common.HexToAddress("0xd43241c35E49158B61aD5c061b2d050D276f9E94")
+
+		fmt.Println("registry: ", registryAddress)
+		fmt.Println("market: ", marketAddress)
 
 		dumper, err := dumper.NewGRIDDumper(chain, registryAddress, marketAddress)
 		if err != nil {
