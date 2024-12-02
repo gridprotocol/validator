@@ -4,6 +4,8 @@ go 1.22.3
 
 replace github.com/grid/contracts => ../grid-contracts
 
+replace github.com/gridprotocol/dumper => ../dumper
+
 require (
 	github.com/ethereum/go-ethereum v1.14.12
 	github.com/gin-gonic/gin v1.10.0
