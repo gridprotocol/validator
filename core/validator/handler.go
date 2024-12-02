@@ -20,7 +20,7 @@ func (v *GRIDValidator) LoadValidatorModule(rg *gin.RouterGroup) {
 	rg.POST("/proof", v.SubmitProofHandler)
 
 	// get order count of a provider
-	rg.GET("/v1/provider/:address/count", v.GetOrderCountHandler())
+	rg.GET("/provider/:address/count", v.GetOrderCountHandler())
 
 	fmt.Println("load light node moudle success!")
 }
