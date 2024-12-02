@@ -84,14 +84,14 @@ func (v *GRIDValidator) Start(ctx context.Context) {
 		case <-time.After(wait):
 		}
 
-		// get nodes list
+		// get nodes list with order
 		resultMap, err := v.GetChallengeNode(ctx)
 		if err != nil {
 			logger.Error(err.Error())
 			continue
 		}
 
-		// receive proof from chan and set resultMap
+		// receive succeeded proof from chan and set resultMap
 		res, err := v.HandleResult(ctx, resultMap)
 		if err != nil {
 			logger.Error(err.Error())
