@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	comm "github.com/gridprotocol/validator/common"
 	"github.com/gridprotocol/validator/core/validator"
 
 	"github.com/gridprotocol/dumper/database"
@@ -68,20 +69,40 @@ var runCmd = &cli.Command{
 			}
 		}
 
+		// init database
 		err = database.InitDatabase("~/grid")
 		if err != nil {
 			return err
 		}
 
-		// contract address
-		registryAddress := common.HexToAddress("0x10fd5Eb0A59398796aA6C368CF0562135C3e4c32")
-		marketAddress := common.HexToAddress("0xd43241c35E49158B61aD5c061b2d050D276f9E94")
+		// // contract address
+		// registryAddress := common.HexToAddress("0x10fd5Eb0A59398796aA6C368CF0562135C3e4c32")
+		// marketAddress := common.HexToAddress("0xd43241c35E49158B61aD5c061b2d050D276f9E94")
 
+		var chain_ep string
+
+		// select contracts addresses for each chain
+		switch chain {
+		case "local":
+			chain_ep = eth.Ganache
+			comm.Contracts = comm.LocalContracts.Contracts
+		case "dev":
+			chain_ep = eth.DevChain
+			comm.Contracts = comm.DevContracts.Contracts
+		case "sepo":
+			chain_ep = eth.Sepolia
+			comm.Contracts = comm.SepoContracts.Contracts
+		}
+
+		registryAddress := comm.Contracts.Registry
+		marketAddress := comm.Contracts.Market
+
+		fmt.Println("chain ep: ", chain_ep)
 		fmt.Println("registry: ", registryAddress)
 		fmt.Println("market: ", marketAddress)
 
 		// new dumper
-		dumper, err := dumper.NewGRIDDumper(getEndpointByChain(chain), registryAddress, marketAddress)
+		dumper, err := dumper.NewGRIDDumper(chain_ep, common.HexToAddress(registryAddress), common.HexToAddress(marketAddress))
 		if err != nil {
 			return err
 		}
