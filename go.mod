@@ -10,7 +10,6 @@ require (
 	github.com/ethereum/go-ethereum v1.14.12
 	github.com/gin-gonic/gin v1.10.0
 	github.com/gridprotocol/dumper v0.0.0-20241127095811-5a18b2601079
-	github.com/gridprotocol/platform-v2 v0.2.6
 	github.com/urfave/cli/v2 v2.25.7
 	go.uber.org/zap v1.27.0
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da

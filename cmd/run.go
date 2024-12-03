@@ -171,24 +171,6 @@ func NewValidatorServer(validator *validator.GRIDValidator, endpoint string) (*h
 	}, nil
 }
 
-func getEndpointByChain(chain string) string {
-	switch chain {
-	case "local":
-		return eth.Ganache
-	case "dev":
-		return "https://devchain.metamemo.one:8501"
-		//return "http://10.10.100.82:8201"
-
-		// case "test":
-		// 	return "https://testchain.metamemo.one:24180"
-		// case "product":
-		// 	return "https://chain.metamemo.one:8501"
-		// case "goerli":
-		// 	return "https://eth-goerli.g.alchemy.com/v2/Bn3AbuwyuTWanFLJiflS-dc23r1Re_Af"
-	}
-	return "https://devchain.metamemo.one:8501"
-}
-
 // func InitTestDataBase(path string) error {
 // 	err := database.RemoveDataBase(path)
 // 	if err != nil {
