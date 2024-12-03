@@ -18,6 +18,8 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/gin-gonic/gin"
 	"github.com/urfave/cli/v2"
+
+	"github.com/grid/contracts/eth"
 )
 
 //var provider1 = "0x867F691B053B61490F8eB74c2df63745CfC0A973"
@@ -78,7 +80,8 @@ var runCmd = &cli.Command{
 		fmt.Println("registry: ", registryAddress)
 		fmt.Println("market: ", marketAddress)
 
-		dumper, err := dumper.NewGRIDDumper(chain, registryAddress, marketAddress)
+		// new dumper
+		dumper, err := dumper.NewGRIDDumper(getEndpointByChain(chain), registryAddress, marketAddress)
 		if err != nil {
 			return err
 		}
@@ -145,6 +148,24 @@ func NewValidatorServer(validator *validator.GRIDValidator, endpoint string) (*h
 		Addr:    endpoint,
 		Handler: router,
 	}, nil
+}
+
+func getEndpointByChain(chain string) string {
+	switch chain {
+	case "local":
+		return eth.Ganache
+	case "dev":
+		return "https://devchain.metamemo.one:8501"
+		//return "http://10.10.100.82:8201"
+
+		// case "test":
+		// 	return "https://testchain.metamemo.one:24180"
+		// case "product":
+		// 	return "https://chain.metamemo.one:8501"
+		// case "goerli":
+		// 	return "https://eth-goerli.g.alchemy.com/v2/Bn3AbuwyuTWanFLJiflS-dc23r1Re_Af"
+	}
+	return "https://devchain.metamemo.one:8501"
 }
 
 // func InitTestDataBase(path string) error {
